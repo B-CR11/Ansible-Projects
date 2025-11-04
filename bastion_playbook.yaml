@@ -1,0 +1,72 @@
+---
+# This is the ansible playbook for quick deployment of Ben's Bastion Host
+
+- name: Install Basic Packages
+  hosts: localhost
+  become: yes
+  vars:
+    packages_to_install:
+      - plocate
+      - trip
+      - screen
+      - python3
+      - jq
+      - clustershell
+      - ansible 
+      - postfix
+      - sshuttle
+      - sshpass
+      - terraform
+      - telnet
+      - time
+      - zip
+      - unzip
+      - wget
+      - tar
+      - sed
+      - vim
+      - curl
+      - btop
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+  tasks:
+    - name: Update apt Cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      changed_when: false
+
+    - name: Install Specified Packages
+      ansible.builtin.apt:
+        name: "{{ packages_to_install }}"
+        state: present
+
+- name: Install Google Cloud CLI
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Add Google Cloud APT Signing Key
+      ansible.builtin.apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        keyring: /usr/share/keyrings/google-cloud.gpg
+        state: present
+      become: yes
+      
+    - name: Change Permission on GCP GPG Key
+      ansible.builtin.file:
+        path: /usr/share/keyrings/google-cloud.gpg
+        mode: 0644
+      become: yes
+        
+    - name: Add Google Cloud APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/google-cloud.gpg] https://packages.cloud.google.com/apt cloud-sdk main"
+        state: present
+        filename: google-cloud-sdk
+
+    - name: Install Google Cloud CLI
+      ansible.builtin.apt:
+        name: google-cloud-cli
+        state: present
+        update_cache: yes
