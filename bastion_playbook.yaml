@@ -81,9 +81,14 @@
 
     - name: Add HashiCorp repository
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
         state: present
         filename: hashicorp
+        update_cache: no
+
+    - name: Update Apt Cache
+      ansible.builtin.apt:
+        update_cache: yes
 
     - name: Install Terraform
       ansible.builtin.apt:
