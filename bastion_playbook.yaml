@@ -69,43 +69,49 @@
         update_cache: yes
   
 - name: Install Terraform from HashiCorp APT Repository
-  hosts: localhost
+  hosts: all
   become: yes # Requires sudo
   tasks:
 
-    - name: 1. Install prerequisites
+    - name: Install prerequisites
       ansible.builtin.apt:
         name: 
           - gpg
-          - curl  # Make sure curl is installed
+          - curl
         state: present
         update_cache: yes
 
-    - name: 2. Download and Dearmor HashiCorp GPG key in one step
+    - name: Download and Dearmor HashiCorp GPG key
       ansible.builtin.shell:
-        # This command downloads the key with curl, pipes it to gpg --dearmor,
-        # and saves the output directly to the final destination.
+        # Downloads and dearmors in one pipe
         cmd: curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        
-        # This makes the task idempotent (it won't run if the file already exists)
+        # Makes task idempotent
         creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        
-        # We must use 'shell' to support the '|' (pipe)
         executable: /bin/bash 
 
-    - name: 3. Add the HashiCorp repository
+    # --- FIX: Get the correct architecture name ---
+    - name: Get DPKG architecture (e.g., 'amd64')
+      ansible.builtin.command:
+        cmd: dpkg --print-architecture
+      register: deb_architecture
+      changed_when: false # This command doesn't make changes
+
+    - name: Add the HashiCorp repository
       ansible.builtin.apt_repository:
         filename: hashicorp
-        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com noble main"
+        # Use the registered variable 'deb_architecture.stdout'
+        # and 'ansible_distribution_release' (which correctly finds 'noble')
+        repo: "deb [arch={{ deb_architecture.stdout }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
         state: present
         update_cache: no # We will update in the next step
 
-    - name: 4. Update apt cache
-      ansible.builtin.apt:
-        update_cache: yes
+    # --- FIX: Force the cache update as a separate step ---
+    - name: Update apt cache explicitly
+      ansible.builtin.command:
+        cmd: apt-get update
+      changed_when: false # We expect 'apt-get update' to just run, not 'change' state
         
-    - name: 5. Install Terraform
+    - name: Install Terraform
       ansible.builtin.apt:
-        force_apt_get: true
         name: terraform
         state: present
