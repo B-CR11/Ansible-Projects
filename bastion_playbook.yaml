@@ -96,7 +96,7 @@
     - name: 3. Add the HashiCorp repository
       ansible.builtin.apt_repository:
         filename: hashicorp
-        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }}/main"
+        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com noble main"
         state: present
         update_cache: no # We will update in the next step
 
