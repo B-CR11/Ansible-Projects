@@ -79,6 +79,11 @@
         mode: '0644'
         force: true
 
+    - name: Dearmor the GPG Key
+      ansible.builtin.shell:
+        cmd: gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg < /tmp/hashicorp-archive-keyring.asc
+        creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
     - name: Add HashiCorp repository
       ansible.builtin.apt_repository:
         repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
